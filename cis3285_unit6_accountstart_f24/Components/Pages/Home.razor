@@ -13,7 +13,7 @@
 <br>
 <br>
 <label for="accountList">Current Accounts:</label>
-<select name="accountList" id="accountList" class="form-control" @bind="selectedAccountName" @bind:event="onchange">
+<select name="accountList" id="accountList" class="form-control" @bind="selectedAccountName">
     @if (accountList != null && accountList.Count > 0)
     {
         <option value="NoAccountSelected">Select an account</option>
@@ -44,14 +44,29 @@
 
 @code {
 
-    private string newAccountName;              // name in the new account textbox
-    private string selectedAccountName;         // account name selected from Acccout dropdown
+    private string newAccountName;    
+
+    private string selectedAccountName
+    {
+        get => _selectedAccountName;
+        set
+        {
+            _selectedAccountName = value;
+            updateAccount(); 
+        }
+    }
+    private string _selectedAccountName;  
+
+    // name in the new account textbox
+   // private string selectedAccountName;         // account name selected from Acccout dropdown
     private string strAccountBalance;           // display for the account balance
     private decimal accountBalance = 0.00m;     // numeric value of account balance
     private string strDepositAmount;            // amount to deposit as a string
     private string strWithdrawAmount;           // amount to withdraw as a string
 
     private List<string> accountList = new List<string>();
+
+
     AccountService acctService = new AccountService();
 
     protected override void OnInitialized()
@@ -62,8 +77,9 @@
 
     private void updateAccount()
     {
-        if (string.Compare(selectedAccountName, "NoAccountSelected") != 0)
+        if (!string.IsNullOrEmpty(selectedAccountName) && selectedAccountName != "NoAccountSelected")
         {
+            // this will update the account balance when account is selected
             accountBalance = acctService.GetAccountBalance(selectedAccountName);
             strAccountBalance = accountBalance.ToString();
         }
@@ -71,6 +87,9 @@
         {
             strAccountBalance = "No account selected";
         }
+
+        // this will make sure the UI gets updatd when the account changes
+        StateHasChanged();
     }
 
     private void btnDeposit_Click()
@@ -82,13 +101,22 @@
         StateHasChanged();
     }
 
+
+
     private void btnWithdraw_Click()
     {
-        decimal amount = decimal.Parse(strWithdrawAmount);
-        acctService.Withdrawal(selectedAccountName, amount);
-        accountBalance = acctService.GetAccountBalance(selectedAccountName);
-        strAccountBalance = accountBalance.ToString();
-        StateHasChanged();
+        if(decimal.TryParse(strWithdrawAmount, out decimal amount))
+        {
+            acctService.Withdrawal(selectedAccountName, amount);
+
+            accountBalance = acctService.GetAccountBalance(selectedAccountName);
+            strAccountBalance = accountBalance.ToString();
+            StateHasChanged();
+
+        }
+
+        // decimal amount = decimal.Parse(strWithdrawAmount);
+
     }
 
     private void btnAddAccount_Click()
@@ -104,4 +132,6 @@
         StateHasChanged();
 
     }
+
+
 }
